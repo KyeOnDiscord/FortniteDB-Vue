@@ -1,7 +1,11 @@
-# Vue 3 + Vite
+# Fortnite DB Vue
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Ffortnite-api.com%2Fv2%2Faes&query=%24.data.build&label=Fortnite%20Version)
+![Static Badge](https://img.shields.io/badge/Vue.js-grey?logo=vue.js)
+[![Build GitHub Pages Branch](https://github.com/KyeOnDiscord/FortniteDB-Vue/actions/workflows/build.yaml/badge.svg?branch=main)](https://github.com/KyeOnDiscord/FortniteDB-Vue/actions/workflows/build.yaml)
 
-## Recommended IDE Setup
+A simple Fortnite cosmetics database made with Vue.js.
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+All data is provided by [Fortnite-API](https://fortnite-api.com/).
+
+The site can be accessed at [fortnitedb.kyedev.xyz](https://fortnitedb.kyedev.xyz/).
