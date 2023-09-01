@@ -28,7 +28,11 @@
       <tr v-for="(skin, index) in skins" :key="index">
         <th v-if="columns['#']" scope="row">{{ index + 1 }}</th>
         <td v-if="columns['Icon']">
-          <img :src="skin.images.icon ?? null" :class="skin.rarity.value" />
+          <img
+            :src="skin.images.smallIcon ?? null"
+            :class="skin.rarity.value"
+            loading="lazy"
+          />
         </td>
         <td v-if="columns['ID']">
           <code>{{ skin.id }}</code>
@@ -49,11 +53,16 @@
 </template>
 
 <script>
+import { decode } from "@msgpack/msgpack";
+
 export default {
   async mounted() {
-    const resp = await fetch("https://fortnite-api.com/v2/cosmetics/br");
-    let json = await resp.json();
-    // console.log(json);
+    const resp = await fetch(
+      "https://fortnite-api.com/v2/cosmetics/br?responseOptions=ignore_null&responseFormat=msgpack"
+    );
+    let msgpack = await resp.arrayBuffer();
+    let json = decode(msgpack);
+    console.log(json);
     this.skins = json.data
       .filter((item) => item.type.backendValue === "AthenaCharacter")
       .sort((a, b) => (a.id > b.id ? 1 : -1));
