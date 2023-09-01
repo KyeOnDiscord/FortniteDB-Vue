@@ -24,7 +24,7 @@ jobs:
           npm install
           npm run build
           cd dist
-          echo "fortnite.kyedev.xyz" > CNAME
+          echo "fortnitedb.kyedev.xyz" > CNAME
           git config --global user.email "fortnite@kyedev.xyz"
           git config --global user.name "Kye"
           git init
