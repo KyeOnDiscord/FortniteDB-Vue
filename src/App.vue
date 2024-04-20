@@ -1,5 +1,24 @@
 <template>
   <div class="container d-flex flex-row mb-3">
+    <div class="dropdown me-3">
+      <button
+        class="btn btn-secondary dropdown-toggle"
+        type="button"
+        data-bs-toggle="dropdown"
+        aria-expanded="false"
+      >
+        Cosmetic Type
+      </button>
+      <ul class="dropdown-menu">
+        <li v-for="cosmeticType in CosmeticTypes">
+          <a
+            class="dropdown-item"
+            @click="this.selectedCosmeticType = cosmeticType"
+            >{{ cosmeticType }}</a
+          >
+        </li>
+      </ul>
+    </div>
     <div v-for="key in Object.keys(columns)" class="form-check me-3">
       <input class="form-check-input" type="checkbox" v-model="columns[key]" />
       <label class="form-check-label">
@@ -11,7 +30,7 @@
   <table
     class="table table-hover table-sm table-bordered border-dark-subtle"
     style="max-width: 100%"
-    v-if="skins"
+    v-if="this.CosmeticsList"
   >
     <thead style="max-width: 100%">
       <tr>
@@ -25,7 +44,12 @@
       </tr>
     </thead>
     <tbody>
-      <tr v-for="(skin, index) in skins" :key="index">
+      <tr
+        v-for="(skin, index) in this.CosmeticsList.filter(
+          (item) => item.type.backendValue === this.selectedCosmeticType
+        ).sort((a, b) => (a.id > b.id ? 1 : -1))"
+        :key="index"
+      >
         <th v-if="columns['#']" scope="row">{{ index + 1 }}</th>
         <td v-if="columns['Icon']">
           <img
@@ -53,24 +77,20 @@
 </template>
 
 <script>
-import { decode } from "@msgpack/msgpack";
-
 export default {
   async mounted() {
     const resp = await fetch(
-      "https://fortnite-api.com/v2/cosmetics/br?responseOptions=ignore_null&responseFormat=msgpack"
+      "https://fortnite-api.com/v2/cosmetics/br?responseOptions=ignore_null"
     );
-    let msgpack = await resp.arrayBuffer();
-    let json = decode(msgpack);
-    console.log(json);
-    this.skins = json.data
-      .filter((item) => item.type.backendValue === "AthenaCharacter")
-      .sort((a, b) => (a.id > b.id ? 1 : -1));
-    console.log(this.skins);
+    let json = await resp.json();
+    this.CosmeticTypes = this.getCosmeticBackends(json.data);
+    this.CosmeticsList = json.data;
   },
   data() {
     return {
-      skins: null,
+      CosmeticsList: null,
+      CosmeticTypes: null,
+      selectedCosmeticType: "AthenaCharacter",
       columns: {
         "#": true,
         Icon: true,
@@ -81,6 +101,12 @@ export default {
         Set: false,
       },
     };
+  },
+  methods: {
+    getCosmeticBackends(CosmeticsList) {
+      let nonDistinctList = CosmeticsList.map((item) => item.type.backendValue);
+      return [...new Set(nonDistinctList)]; // Spread syntax to create a new array
+    },
   },
 };
 </script>
