@@ -58,7 +58,7 @@
             loading="lazy"
           />
         </td>
-        <td v-if="columns['ID']">
+        <td v-if="columns['ID']" style="max-width: 20%">
           <code>{{ skin.id }}</code>
         </td>
         <td v-if="columns['Path']">
@@ -67,9 +67,14 @@
         <td v-if="columns['Name']">
           {{ skin.name }}
         </td>
-        <td v-if="columns['Description']">{{ skin.description }}</td>
+        <td v-if="columns['Description']" style="max-width: 20%">
+          {{ skin.description }}
+        </td>
         <td v-if="columns['Set']">
-          {{ skin.set != null ? skin.set.text : "" }}
+          {{ skin.set == null ? "None" : skin.set.value }}
+        </td>
+        <td v-if="columns['Introduction']">
+          {{ skin.introduction == null ? "None" : skin.introduction.text }}
         </td>
       </tr>
     </tbody>
@@ -80,7 +85,7 @@
 export default {
   async mounted() {
     const resp = await fetch(
-      "https://fortnite-api.com/v2/cosmetics/br?responseOptions=ignore_null"
+      "https://fortnite-api.com/v2/cosmetics/br?responseFlags=1"
     );
     let json = await resp.json();
     this.CosmeticTypes = this.getCosmeticBackends(json.data);
@@ -99,6 +104,7 @@ export default {
         Name: true,
         Description: true,
         Set: false,
+        Introduction: false,
       },
     };
   },
@@ -116,7 +122,7 @@ code {
   padding: 2px 4px;
   border-radius: 4px;
   font-size: 14px;
-  font-family: "Menlo";
+  font-family: "Courier New", Courier, monospace;
   color: #569cd6;
   background-color: #1f1f1f;
 }
