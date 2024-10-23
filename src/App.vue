@@ -47,7 +47,7 @@
       <tr
         v-for="(skin, index) in this.CosmeticsList.filter(
           (item) => item.type.backendValue === this.selectedCosmeticType
-        ).sort((a, b) => (a.id > b.id ? 1 : -1))"
+        ).sort((a, b) => new Date(b.added) - new Date(a.added))"
         :key="index"
       >
         <th v-if="columns['#']" scope="row">{{ index + 1 }}</th>
