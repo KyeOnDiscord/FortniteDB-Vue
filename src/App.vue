@@ -59,10 +59,30 @@
           />
         </td>
         <td v-if="columns['ID']" style="max-width: 20%">
-          <code>{{ skin.id }}</code>
+          <code
+            ><a
+              :href="
+                'https://fortnitecentral.genxgames.gg/api/v1/export?path=' +
+                skin.path
+              "
+              target="_blank"
+              style="text-decoration: none"
+              >{{ skin.id }}</a
+            ></code
+          >
         </td>
         <td v-if="columns['Path']">
-          <code>{{ skin.path }}</code>
+          <code
+            ><a
+              :href="
+                'https://fortnitecentral.genxgames.gg/api/v1/export?path=' +
+                skin.path
+              "
+              target="_blank"
+              style="text-decoration: none"
+              >{{ skin.path }}</a
+            ></code
+          >
         </td>
         <td v-if="columns['Name']">
           {{ skin.name }}
