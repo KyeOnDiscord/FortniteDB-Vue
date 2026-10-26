@@ -1,31 +1,82 @@
 <template>
-  <div class="container d-flex flex-row mb-3">
-    <div class="dropdown me-3">
-      <button
-        class="btn btn-secondary dropdown-toggle"
-        type="button"
-        data-bs-toggle="dropdown"
-        aria-expanded="false"
-      >
-        Cosmetic Type
-      </button>
-      <ul class="dropdown-menu">
-        <li v-for="cosmeticType in CosmeticTypes">
-          <a
-            class="dropdown-item"
-            @click="this.selectedCosmeticType = cosmeticType"
-            >{{ cosmeticType }}</a
+  <section class="container filter-panel mb-3">
+    <div
+      class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3"
+    >
+      <div>
+        <h1 class="h5 mb-1">Cosmetic filters</h1>
+        <p class="text-body-secondary mb-0">
+          Search cosmetics and customize the table.
+        </p>
+      </div>
+      <span class="badge rounded-pill text-bg-primary">
+        {{ filteredCosmetics.length }} results
+      </span>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-12 col-md-4">
+        <label for="cosmetic-type" class="form-label fw-semibold">
+          Cosmetic type
+        </label>
+        <select
+          id="cosmetic-type"
+          v-model="selectedCosmeticType"
+          class="form-select"
+        >
+          <option
+            v-for="cosmeticType in CosmeticTypes"
+            :key="cosmeticType"
+            :value="cosmeticType"
           >
-        </li>
-      </ul>
+            {{ cosmeticType }}
+          </option>
+        </select>
+      </div>
+      <div class="col-12 col-md-8">
+        <label for="cosmetic-search" class="form-label fw-semibold">
+          Search by name or ID
+        </label>
+        <div class="input-group">
+          <input
+            id="cosmetic-search"
+            v-model="searchQuery"
+            type="search"
+            class="form-control"
+            placeholder="Enter a cosmetic name or ID"
+            autocomplete="off"
+          />
+          <button
+            v-if="searchQuery"
+            class="btn btn-outline-secondary"
+            type="button"
+            @click="searchQuery = ''"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
     </div>
-    <div v-for="key in Object.keys(columns)" class="form-check me-3">
-      <input class="form-check-input" type="checkbox" v-model="columns[key]" />
-      <label class="form-check-label">
-        {{ key }}
-      </label>
-    </div>
-  </div>
+
+    <fieldset class="column-filters mt-3">
+      <legend class="form-label fw-semibold mb-2">Visible columns</legend>
+      <div class="d-flex flex-wrap gap-2">
+        <label
+          v-for="key in Object.keys(columns)"
+          :key="key"
+          class="column-toggle"
+          :class="{ active: columns[key] }"
+        >
+          <input
+            v-model="columns[key]"
+            class="form-check-input"
+            type="checkbox"
+          />
+          <span>{{ key }}</span>
+        </label>
+      </div>
+    </fieldset>
+  </section>
 
   <table
     class="table table-hover table-sm table-bordered border-dark-subtle"
@@ -35,7 +86,7 @@
     <thead style="max-width: 100%">
       <tr>
         <th
-          v-for="key in Object.keys(columns).filter((x) => columns[x] == true)"
+          v-for="key in visibleColumns"
           :key="key"
           scope="col"
         >
@@ -45,10 +96,8 @@
     </thead>
     <tbody>
       <tr
-        v-for="(skin, index) in this.CosmeticsList.filter(
-          (item) => item.type.backendValue === this.selectedCosmeticType
-        ).sort((a, b) => new Date(b.added) - new Date(a.added))"
-        :key="index"
+        v-for="(skin, index) in filteredCosmetics"
+        :key="skin.id"
       >
         <th v-if="columns['#']" scope="row">{{ index + 1 }}</th>
         <td v-if="columns['Icon']">
@@ -59,30 +108,26 @@
           />
         </td>
         <td v-if="columns['ID']" style="max-width: 20%">
-          <code
-            ><a
-              :href="
-                'https://fortnitecentral.genxgames.gg/api/v1/export?path=' +
-                skin.path
-              "
-              target="_blank"
-              style="text-decoration: none"
-              >{{ skin.id }}</a
-            ></code
-          >
+          <code>
+            <button
+              type="button"
+              class="copy-button"
+              @click="copyToClipboard(skin.id)"
+            >
+              {{ skin.id }}
+            </button>
+          </code>
         </td>
         <td v-if="columns['Path']">
-          <code
-            ><a
-              :href="
-                'https://fortnitecentral.genxgames.gg/api/v1/export?path=' +
-                skin.path
-              "
-              target="_blank"
-              style="text-decoration: none"
-              >{{ skin.path }}</a
-            ></code
-          >
+          <code>
+            <button
+              type="button"
+              class="copy-button"
+              @click="copyToClipboard(skin.path)"
+            >
+              {{ skin.path }}
+            </button>
+          </code>
         </td>
         <td v-if="columns['Name']">
           {{ skin.name }}
@@ -97,12 +142,56 @@
           {{ skin.introduction == null ? "None" : skin.introduction.text }}
         </td>
       </tr>
+      <tr v-if="filteredCosmetics.length === 0">
+        <td
+          :colspan="Math.max(visibleColumns.length, 1)"
+          class="text-center text-body-secondary py-4"
+        >
+          No cosmetics match your filters.
+        </td>
+      </tr>
     </tbody>
   </table>
+
+  <div
+    v-if="copyFeedback"
+    class="copy-toast"
+    :class="
+      copyFeedback === 'Copied!' ? 'copy-toast-success' : 'copy-toast-error'
+    "
+    role="status"
+    aria-live="polite"
+  >
+    {{ copyFeedback }}
+  </div>
 </template>
 
 <script>
 export default {
+  computed: {
+    visibleColumns() {
+      return Object.keys(this.columns).filter((key) => this.columns[key]);
+    },
+    filteredCosmetics() {
+      const searchQuery = this.searchQuery.trim().toLowerCase();
+
+      return (this.CosmeticsList ?? [])
+        .filter((item) => {
+          const matchesType =
+            item.type.backendValue === this.selectedCosmeticType;
+          const matchesSearch =
+            !searchQuery ||
+            item.name.toLowerCase().includes(searchQuery) ||
+            item.id.toLowerCase().includes(searchQuery);
+
+          return matchesType && matchesSearch;
+        })
+        .sort((a, b) => new Date(b.added) - new Date(a.added));
+    },
+  },
+  beforeUnmount() {
+    clearTimeout(this.copyFeedbackTimeout);
+  },
   async mounted() {
     const resp = await fetch(
       "https://fortnite-api.com/v2/cosmetics/br?responseFlags=1"
@@ -116,6 +205,9 @@ export default {
       CosmeticsList: null,
       CosmeticTypes: null,
       selectedCosmeticType: "AthenaCharacter",
+      searchQuery: "",
+      copyFeedback: "",
+      copyFeedbackTimeout: null,
       columns: {
         "#": true,
         Icon: true,
@@ -129,6 +221,21 @@ export default {
     };
   },
   methods: {
+    async copyToClipboard(value) {
+      try {
+        await navigator.clipboard.writeText(value);
+        this.copyFeedback = "Copied!";
+      } catch (error) {
+        console.error("Failed to copy to clipboard:", error);
+        this.copyFeedback = "Copy failed";
+      }
+
+      clearTimeout(this.copyFeedbackTimeout);
+      this.copyFeedbackTimeout = setTimeout(() => {
+        this.copyFeedback = "";
+        this.copyFeedbackTimeout = null;
+      }, 1500);
+    },
     getCosmeticBackends(CosmeticsList) {
       let nonDistinctList = CosmeticsList.map((item) => item.type.backendValue);
       return [...new Set(nonDistinctList)]; // Spread syntax to create a new array
@@ -145,6 +252,73 @@ code {
   font-family: "Courier New", Courier, monospace;
   color: #569cd6;
   background-color: #1f1f1f;
+}
+
+.copy-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.filter-panel {
+  padding: 1.25rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.75rem;
+  background-color: var(--bs-tertiary-bg);
+}
+
+.column-filters {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  margin: 0;
+}
+
+.column-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 50rem;
+  background-color: var(--bs-body-bg);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease-in-out,
+    background-color 0.15s ease-in-out;
+}
+
+.column-toggle.active {
+  border-color: var(--bs-primary);
+  background-color: rgba(var(--bs-primary-rgb), 0.08);
+}
+
+.column-toggle .form-check-input {
+  margin: 0;
+  cursor: pointer;
+}
+
+.copy-toast {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 1050;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  color: #fff;
+  box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 25%);
+}
+
+.copy-toast-success {
+  background-color: #198754;
+}
+
+.copy-toast-error {
+  background-color: #dc3545;
 }
 
 img {
